@@ -1,3 +1,7 @@
+# Fork Overview
+
+This repo contains the fork of Tesseract used for [Scribe OCR](https://github.com/scribeocr/scribeocr).  Any code in this repo that differs from the main Tesseract codebase should be considered part of Scribe OCR, and is AGPL licensed.  For more information about Tesseract, see the [main Tesseract repo](https://github.com/tesseract-ocr/tesseract).  Everything below this section is from the main Tesseract project, not this fork.
+
 # Tesseract OCR
 
 [![Build status](https://ci.appveyor.com/api/projects/status/miah0ikfsf0j3819/branch/master?svg=true)](https://ci.appveyor.com/project/zdenop/tesseract/)
