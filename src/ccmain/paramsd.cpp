@@ -98,18 +98,37 @@ void ParamsEditor::GetFirstWords(const char *s, // source string
                                  int n,         // number of words
                                  char *t        // target string
 ) {
-  int full_length = strlen(s);
-  int reqd_len = 0; // No. of chars required
-  const char *next_word = s;
+  const char *next_word = s; // Pointer to the start of the next word
+  int words_copied = 0;      // Number of words copied
+  int total_len = 0;         // Total length of characters to copy
 
-  while ((n > 0) && reqd_len < full_length) {
-    reqd_len += strcspn(next_word, "_") + 1;
-    next_word += reqd_len;
-    n--;
+  // Iterate over the words in the source string
+  while (words_copied < n && *next_word != '\0') {
+    // Find the length of the current word
+    int word_len = strcspn(next_word, "_");
+
+    // Add the length of the current word to the total length
+    total_len += word_len;
+
+    // If there are more words to copy, account for the delimiter
+    if (words_copied < n - 1 && next_word[word_len] == '_') {
+      total_len++;
+    }
+
+    // Move to the next word
+    next_word += word_len;
+    if (*next_word == '_') {
+      next_word++; // Skip the delimiter
+    }
+
+    words_copied++;
   }
-  strncpy(t, s, reqd_len);
-  t[reqd_len] = '\0'; // ensure null terminal
+
+  // Copy the required portion of the source string to the target string
+  strncpy(t, s, total_len);
+  t[total_len] = '\0'; // Ensure null termination
 }
+
 
 // Getter for the name.
 const char *ParamContent::GetName() const {
