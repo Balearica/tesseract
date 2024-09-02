@@ -150,10 +150,10 @@ ColumnFinder::~ColumnFinder() {
 // determine the gross textline alignment of the page.
 void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mask_pix,
                                        TO_BLOCK *input_block) {
-  part_grid_.Init(gridsize() / 2, bleft(), tright());
+  part_grid_.Init(gridsize() , bleft(), tright());
   delete stroke_width_;
-  stroke_width_ = new StrokeWidth(gridsize() / 2, bleft(), tright());
-  min_gutter_width_ = static_cast<int>(kMinGutterWidthGrid * gridsize() / 2);
+  stroke_width_ = new StrokeWidth(gridsize() , bleft(), tright());
+  min_gutter_width_ = static_cast<int>(kMinGutterWidthGrid * gridsize() );
   input_block->ReSetAndReFilterBlobs();
 #ifndef GRAPHICS_DISABLED
   if (textord_tabfind_show_blocks) {
@@ -165,7 +165,7 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
   nontext_map_.destroy();
   // Run a preliminary strokewidth neighbour detection on the medium blobs.
   stroke_width_->SetNeighboursOnMediumBlobs(input_block);
-  CCNonTextDetect nontext_detect(gridsize() / 2, bleft(), tright());
+  CCNonTextDetect nontext_detect(gridsize() , bleft(), tright());
   // Remove obvious noise and make the initial non-text map.
   nontext_map_ =
       nontext_detect.ComputeNonTextMask(textord_debug_tabfind, photo_mask_pix, input_block);
