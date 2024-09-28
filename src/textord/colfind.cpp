@@ -541,6 +541,7 @@ void ColumnFinder::DisplayColumnBounds(PartSetVector *sets) {
       columns->DisplayColumnEdges(i * gridsize_, (i + 1) * gridsize_, col_win);
     }
   }
+  col_win->UpdateWindow();
 }
 
 #endif // !GRAPHICS_DISABLED
