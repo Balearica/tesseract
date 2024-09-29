@@ -2238,9 +2238,6 @@ int TessBaseAPI::FindLines() {
     tprintf("Please call SetImage before attempting recognition.\n");
     return -1;
   }
-  if (recognition_done_) {
-    ClearResults();
-  }
   if (!block_list_->empty()) {
     return 0;
   }
