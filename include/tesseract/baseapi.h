@@ -356,15 +356,24 @@ public:
   Pix *GetThresholdedImage();
 
   /**
- * Function added by Tesseract.js.
- * Saves a .png image of the type specified by `type` to the file `filename`
- */
+   * Function added by Tesseract.js.
+   * Saves a .png image of the type specified by `type` to the file `filename`
+   */
   void WriteImage(const int type);
 
   /** Function added by Tesseract.js.
+
+  /** 
+   * Function added by Tesseract.js.
    * Return gradient of page.
    */
   float GetGradient();
+
+  /** 
+   * Function added by Scribe.js.
+   * Return estimated resolution of page.
+   */
+  int GetEstimatedResolution();
 
   /**
    * Get the result of page layout analysis as a leptonica-style

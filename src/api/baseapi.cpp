@@ -2281,6 +2281,14 @@ float TessBaseAPI::GetGradient() {
   return tesseract_->gradient();
 }
 
+/** 
+ * Function added by Scribe.js.
+ * Return estimated resolution of page.
+ */
+int TessBaseAPI::GetEstimatedResolution() {
+  return tesseract_->estimated_resolution();
+}
+
 /** Delete the pageres and clear the block list ready for a new page. */
 void TessBaseAPI::ClearResults() {
   if (tesseract_ != nullptr) {
