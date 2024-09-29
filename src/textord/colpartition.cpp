@@ -1279,6 +1279,7 @@ bool ColPartition::MarkAsLeaderIfMonospaced() {
 void ColPartition::SetRegionAndFlowTypesFromProjectionValue(int value) {
   int blob_count = 0;       // Total # blobs.
   int good_blob_score_ = 0; // Total # good strokewidth neighbours.
+  int med_count = 0;
   int noisy_count = 0;      // Total # neighbours marked as noise.
   int hline_count = 0;
   int vline_count = 0;
@@ -1286,6 +1287,7 @@ void ColPartition::SetRegionAndFlowTypesFromProjectionValue(int value) {
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     BLOBNBOX *blob = it.data();
     ++blob_count;
+    med_count += blob->medium();
     noisy_count += blob->NoisyNeighbours();
     good_blob_score_ += blob->GoodTextBlob();
     if (blob->region_type() == BRT_HLINE) {
@@ -1303,7 +1305,7 @@ void ColPartition::SetRegionAndFlowTypesFromProjectionValue(int value) {
   } else if (vline_count > hline_count) {
     flow_ = BTFT_NONE;
     blob_type_ = BRT_VLINE;
-  } else if (value < -1 || 1 < value) {
+  } else {
     int long_side;
     int short_side;
     if (value > 0) {
@@ -1340,6 +1342,12 @@ void ColPartition::SetRegionAndFlowTypesFromProjectionValue(int value) {
     if (flow_ == BTFT_STRONG_CHAIN && value < 0 && strong_score < 2) {
       flow_ = BTFT_CHAIN;
     }
+
+    // If this partition is mostly medium blobs and 2+ indicators pass, then set it as a chain.
+    if (blob_count > 3 && med_count * 4 >= blob_count * 3 && short_side > kHorzStrongTextlineHeight && short_side * 3 < long_side) {
+      flow_ = BTFT_CHAIN;
+    }
+
   }
   if (flow_ == BTFT_NEIGHBOURS) {
     // Check for noisy neighbours.
