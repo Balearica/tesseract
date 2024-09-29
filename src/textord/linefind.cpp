@@ -713,15 +713,16 @@ void LineFinder::FindAndRemoveLines(int resolution, bool debug, bool debug_sv, I
     int height = pixGetHeight(pix);
     auto *win = new ScrollView("LinesMask", 0, 0, width, height, width, height);
 
-    if (pix_vline != nullptr) {
+    if (pix_vline != nullptr && pix_hline != nullptr) {
+      Image pix_vh = pixOr(NULL, pix_vline, pix_hline);
+      win->Draw(pix_vh, 0, 0);
+      pix_vh.destroy();
+    } else if (pix_vline != nullptr) {
       win->Draw(pix_vline, 0, 0);
-    }
-
-    if (pix_hline != nullptr) {
+    } else if (pix_hline != nullptr) {
       win->Draw(pix_hline, 0, 0);
     }
-
-    win->Update();
+    win->UpdateWindow();
     #ifdef SCROLLVIEW_NONINTERACTIVE
     delete win;
     #endif
@@ -751,15 +752,16 @@ void LineFinder::FindAndRemoveLines(int resolution, bool debug, bool debug_sv, I
     int height = pixGetHeight(pix);
     auto *win = new ScrollView("LinesMask", 0, 0, width, height, width, height);
 
-    if (pix_vline != nullptr) {
+    if (pix_vline != nullptr && pix_hline != nullptr) {
+      Image pix_vh = pixOr(NULL, pix_vline, pix_hline);
+      win->Draw(pix_vh, 0, 0);
+      pix_vh.destroy();
+    } else if (pix_vline != nullptr) {
       win->Draw(pix_vline, 0, 0);
-    }
-
-    if (pix_hline != nullptr) {
+    } else if (pix_hline != nullptr) {
       win->Draw(pix_hline, 0, 0);
     }
-
-    win->Update();
+    win->UpdateWindow();
     #ifdef SCROLLVIEW_NONINTERACTIVE
     delete win;
     #endif
