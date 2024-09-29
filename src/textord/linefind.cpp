@@ -462,6 +462,8 @@ static void GetLineMasks(int resolution, Image src_pix, Image *pix_vline, Image 
   Image pix_closed = nullptr;
   Image pix_hollow = nullptr;
 
+  resolution = std::max(200, resolution);
+
   int max_line_width = resolution / kThinLineFraction;
   int min_line_length = resolution / kMinLineLengthFraction;
   if (pixa_display != nullptr) {
