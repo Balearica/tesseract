@@ -320,9 +320,24 @@ ColumnFinder *Tesseract::SetupPageSegAndDetectOrientation(PageSegMode pageseg_mo
     estimated_resolution_ = kMinCredibleResolution;
   }
 
+  // tprintf("Calculated resolution: %d\n", estimated_resolution_);
+
+  int estimated_resolution = source_resolution_;
+  if (source_resolution_ == kMinCredibleResolution) {
+    // Try to estimate resolution from typical body text size.
+    int res = IntCastRounded(to_block->line_size * kResolutionEstimationFactor);
+    if (res > estimated_resolution && res < kMaxCredibleResolution) {
+      estimated_resolution = res;
+      tprintf("Estimating resolution as %d\n", estimated_resolution);
+    }
+  }
+
+  // tprintf("Final resolution: %d\n", estimated_resolution);
+
+
   if (to_block->line_size >= 2) {
     finder = new ColumnFinder(static_cast<int>(to_block->line_size), blkbox.botleft(),
-                              blkbox.topright(), estimated_resolution_, textord_use_cjk_fp_model,
+                              blkbox.topright(), estimated_resolution, textord_use_cjk_fp_model,
                               textord_tabfind_aligned_gap_fraction, &v_lines, &h_lines, vertical_x,
                               vertical_y);
 

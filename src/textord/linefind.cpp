@@ -462,15 +462,15 @@ static void GetLineMasks(int resolution, Image src_pix, Image *pix_vline, Image 
   Image pix_closed = nullptr;
   Image pix_hollow = nullptr;
 
-  resolution = std::max(200, resolution);
+  int resolution2 = std::max(200, resolution);
 
-  int max_line_width = resolution / kThinLineFraction;
-  int min_line_length = resolution / kMinLineLengthFraction;
+  int max_line_width = resolution2 / kThinLineFraction;
+  int min_line_length = resolution2 / kMinLineLengthFraction;
   if (pixa_display != nullptr) {
     tprintf("Image resolution = %d, max line width = %d, min length=%d\n", resolution,
             max_line_width, min_line_length);
   }
-  int closing_brick = max_line_width / 3;
+  int closing_brick = (resolution / kThinLineFraction) / 3;
 
 // only use opencl if compiled w/ OpenCL and selected device is opencl
 #ifdef USE_OPENCL

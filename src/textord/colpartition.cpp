@@ -1305,7 +1305,7 @@ void ColPartition::SetRegionAndFlowTypesFromProjectionValue(int value) {
   } else if (vline_count > hline_count) {
     flow_ = BTFT_NONE;
     blob_type_ = BRT_VLINE;
-  } else {
+  } else if (value < -1 || 0 < value) {
     int long_side;
     int short_side;
     if (value > 0) {
@@ -1343,8 +1343,8 @@ void ColPartition::SetRegionAndFlowTypesFromProjectionValue(int value) {
       flow_ = BTFT_CHAIN;
     }
 
-    // If this partition is mostly medium blobs and 2+ indicators pass, then set it as a chain.
-    if (blob_count > 3 && med_count * 4 >= blob_count * 3 && short_side > kHorzStrongTextlineHeight && short_side * 3 < long_side) {
+    // If this partition is horizontal, mostly medium blobs and 2+ indicators pass, then set it as a chain.
+    if (blob_count > 3 && med_count * 4 >= blob_count * 3 && short_side > kHorzStrongTextlineHeight && short_side * 3 < long_side && value > 0) {
       flow_ = BTFT_CHAIN;
     }
 
