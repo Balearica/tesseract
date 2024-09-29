@@ -206,6 +206,10 @@ public:
     return gradient_;
   }
 
+  int estimated_resolution() const {
+    return estimated_resolution_;
+  }
+
   // Destroy any existing pix and return a pointer to the pointer.
   Image *mutable_pix_binary() {
     pix_binary_.destroy();
@@ -1011,6 +1015,7 @@ private:
   FCOORD deskew_;
   FCOORD reskew_;
   float gradient_;
+  int estimated_resolution_;
   TesseractStats stats_;
   // Sub-languages to be tried in addition to this.
   std::vector<Tesseract *> sub_langs_;

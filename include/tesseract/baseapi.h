@@ -361,10 +361,17 @@ public:
  */
   void WriteImage(const int type);
 
-  /** Function added by Tesseract.js.
+  /** 
+   * Function added by Tesseract.js.
    * Return gradient of page.
    */
   float GetGradient();
+
+  /** 
+   * Function added by Scribe.js.
+   * Return estimated resolution of page.
+   */
+  int GetEstimatedResolution();
 
   /**
    * Get the result of page layout analysis as a leptonica-style
