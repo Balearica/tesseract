@@ -363,7 +363,7 @@ public:
   }
   // Returns true if this and other overlap horizontally by bounding box.
   bool HOverlaps(const ColPartition &other) const {
-    return bounding_box_.x_overlap(other.bounding_box_);
+    return bounding_box_.major_x_overlap(other.bounding_box_);
   }
   // Returns true if this and other's bounding boxes overlap vertically.
   // TODO(rays) Make HOverlaps and VOverlaps truly symmetric.
