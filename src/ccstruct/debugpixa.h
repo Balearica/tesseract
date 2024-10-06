@@ -36,6 +36,14 @@ public:
   #ifdef IMAGEMASK_SCROLLVIEW
   #ifndef GRAPHICS_DISABLED
     if (pix != nullptr)  {
+
+      // Some uses of this function dump potentially hundreds of individual images, which do not align with the entire page.
+      // These are skipped when using the scrollview version of this function.
+      if (strncmp(caption, "A component", strlen("A component")) == 0 ||
+        strncmp(caption, "ImageComponent", strlen("ImageComponent")) == 0) {
+        return;
+      }
+
       int width = pixGetWidth(pix);
       int height = pixGetHeight(pix);
       auto *win = new ScrollView(caption, 0, 0, width, height, width, height);
