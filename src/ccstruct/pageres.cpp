@@ -1422,6 +1422,8 @@ void PAGE_RES_IT::ReplaceCurrentWord(
   // x-middle as the determiner of where to put the blobs
   C_BLOB_IT src_b_it(input_word->word->cblob_list());
   src_b_it.sort(&C_BLOB::SortByXMiddle);
+  TBOX input_box = input_word->word->true_bounding_box();
+
   C_BLOB_IT rej_b_it(input_word->word->rej_cblob_list());
   rej_b_it.sort(&C_BLOB::SortByXMiddle);
   TBOX clip_box;
@@ -1460,7 +1462,16 @@ void PAGE_RES_IT::ReplaceCurrentWord(
       if (blob_box.null_box()) {
         // Use the original box as a back-up.
         blob_box = MoveAndClipBlob(&fake_b_it, &dest_it, clip_box);
+
+        // Prevent fake bounding boxes from impacting the box_word.
+        if (blob_box.top() > input_box.top()) {
+          blob_box.set_top(input_box.top());
+        }
+        if (blob_box.bottom() < input_box.bottom()) {
+          blob_box.set_bottom(input_box.bottom());
+        }
       }
+
       box_word->InsertBox(i, blob_box);
     }
     delete word_w->box_word;
