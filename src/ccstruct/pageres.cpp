@@ -1327,8 +1327,8 @@ static TBOX ComputeWordBounds(const tesseract::PointerVector<WERD_RES> &words,
     int width_limit = w_box.width() / kSignificantOverlapFraction;
     int min_significant_overlap = std::max(height_limit, width_limit);
     int overlap = w_box.intersection(current_box).width();
-    int prev_overlap = w_box.intersection(prev_box).width();
-    int next_overlap = w_box.intersection(next_box).width();
+    int prev_overlap = std::max(0, prev_box.right() - w_box.left());
+    int next_overlap = std::max(0, w_box.right() - next_box.left());
     if (overlap > min_significant_overlap) {
       if (prev_overlap > min_significant_overlap) {
         // We have no choice but to use the LSTM word edge.
