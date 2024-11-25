@@ -27,6 +27,7 @@
 namespace tesseract {
 
 INT_VAR(textord_debug_tabfind, 0, "Debug tab finding");
+INT_VAR(textord_debug_nontext, 0, "Debug nontext blob detection");
 INT_VAR(textord_debug_bugs, 0, "Turn on output related to bugs in tab finding");
 static INT_VAR(textord_testregion_left, -1,
                "Left edge of debug reporting rectangle in Leptonica coords "

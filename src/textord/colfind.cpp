@@ -168,7 +168,7 @@ void ColumnFinder::SetupAndFilterNoise(PageSegMode pageseg_mode, Image photo_mas
   CCNonTextDetect nontext_detect(gridsize() / 2, bleft(), tright());
   // Remove obvious noise and make the initial non-text map.
   nontext_map_ =
-      nontext_detect.ComputeNonTextMask(textord_debug_tabfind, photo_mask_pix, input_block);
+      nontext_detect.ComputeNonTextMask(textord_debug_nontext, photo_mask_pix, input_block);
   stroke_width_->FindTextlineDirectionAndFixBrokenCJK(pageseg_mode, cjk_script_, input_block);
   // Clear the strokewidth grid ready for rotation or leader finding.
   stroke_width_->Clear();

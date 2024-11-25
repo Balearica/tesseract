@@ -28,6 +28,7 @@ namespace tesseract {
 
 extern INT_VAR_H(textord_debug_bugs);
 extern INT_VAR_H(textord_debug_tabfind);
+extern INT_VAR_H(textord_debug_nontext);
 extern BOOL_VAR_H(textord_debug_printable);
 
 // Simple structure to hold the search parameters for AlignedBlob.
