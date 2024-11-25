@@ -149,6 +149,12 @@ Image CCNonTextDetect::ComputeNonTextMask(bool debug, Image photo_map, TO_BLOCK 
 // The photo_map is used to bias the decision towards non-text, rather than
 // supplying definite decision.
 IntGrid *CCNonTextDetect::ComputeNoiseDensity(bool debug, Image photo_map, BlobGrid *good_grid) {
+
+  // `debug` is hard-coded to `false` since it results in a lot of output being printed.
+  // It is controlled by the `textord_debug_tabfind` variable, which we enable to produce visualizations,
+  // so we assume that the print statements are not wanted.
+  debug = false;
+
   IntGrid *noise_counts = CountCellElements();
   IntGrid *noise_density = noise_counts->NeighbourhoodSum();
   IntGrid *good_counts = good_grid->CountCellElements();
