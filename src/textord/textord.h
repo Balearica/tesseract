@@ -293,6 +293,7 @@ public:
   // tordmain.cpp ///////////////////////////////////////////
   BOOL_VAR_H(textord_no_rejects);
   BOOL_VAR_H(textord_show_blobs);
+  BOOL_VAR_H(textord_show_word_blobs);
   BOOL_VAR_H(textord_show_boxes);
   INT_VAR_H(textord_max_noise_size);
   INT_VAR_H(textord_baseline_debug);

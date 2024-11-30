@@ -300,6 +300,36 @@ void plot_word_decisions( // draw words
   }
 }
 
+// Similar to `plot_word_decisions`, however this version plots every blob within a word in a different color.
+// This allows for seeing when a single "blob" within a word is actually multiple blobs (pre-textord).
+void plot_word_decisions2( // draw words
+    ScrollView *win,      // window tro draw in
+    ROW *row           // row to draw
+) {
+  
+  WERD_IT w_it(row->word_list());
+  for (w_it.mark_cycle_pt(); !w_it.cycled_list(); w_it.forward()) {
+
+    ScrollView::Color colour = ScrollView::RED;
+
+    WERD *word = w_it.data();
+    C_BLOB_IT blob_it(word->cblob_list());
+    for (blob_it.mark_cycle_pt(); !blob_it.cycled_list(); blob_it.forward()) {
+      C_BLOB *blob = blob_it.data();
+
+
+      C_OUTLINE_IT out_it(blob->out_list());
+      for (out_it.mark_cycle_pt(); !out_it.cycled_list(); out_it.forward()) {
+        C_OUTLINE *outline = out_it.data();
+        outline->plot(win, colour);
+      }
+
+      colour = WERD::NextColor(colour);
+
+    }
+  }
+}
+
 /**********************************************************************
  * plot_fp_cells
  *

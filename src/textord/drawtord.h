@@ -71,6 +71,10 @@ void plot_word_decisions( // draw words
     int16_t pitch,        // of block
     TO_ROW *row           // row to draw
 );
+void plot_word_decisions2( // draw words
+    ScrollView *win,      // window tro draw in
+    ROW *row           // row to draw
+);
 void plot_fp_cells(           // draw words
     ScrollView *win,          // window tro draw in
     ScrollView::Color colour, // colour of lines

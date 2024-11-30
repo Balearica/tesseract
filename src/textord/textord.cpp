@@ -142,6 +142,7 @@ Textord::Textord(CCStruct *ccstruct)
     // tordmain.cpp ///////////////////////////////////////////
     BOOL_MEMBER(textord_no_rejects, false, "Don't remove noise blobs", ccstruct_->params())
     , BOOL_MEMBER(textord_show_blobs, false, "Display unsorted blobs", ccstruct_->params())
+    , BOOL_MEMBER(textord_show_word_blobs, true, "Display blobs that comprise words", ccstruct_->params())
     , BOOL_MEMBER(textord_show_boxes, false, "Display unsorted blobs", ccstruct_->params())
     , INT_MEMBER(textord_max_noise_size, 7, "Pixel size of noise", ccstruct_->params())
     , INT_MEMBER(textord_baseline_debug, 0, "Baseline debug level", ccstruct_->params())
@@ -254,6 +255,20 @@ void Textord::TextordPage(PageSegMode pageseg_mode, const FCOORD &reskew, int wi
     b_it.data()->compute_row_margins();
   }
 #ifndef GRAPHICS_DISABLED
+  if (textord_show_word_blobs) {
+    ScrollView *win = new ScrollView("Textord Word Blobs", 0, 0, page_tr_.x() + 1, page_tr_.y() + 1,
+                          page_tr_.x(), page_tr_.y(), true);
+
+    BLOCK_IT block_it(blocks);
+    for (block_it.mark_cycle_pt(); !block_it.cycled_list(); block_it.forward()) {
+      ROW_IT row_it(block_it.data()->row_list());
+      for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
+        plot_word_decisions2(win, row_it.data());
+      }
+    }
+    win->UpdateWindow();
+  }
+
   close_to_win();
 #endif
 }
