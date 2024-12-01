@@ -142,7 +142,7 @@ Textord::Textord(CCStruct *ccstruct)
     // tordmain.cpp ///////////////////////////////////////////
     BOOL_MEMBER(textord_no_rejects, false, "Don't remove noise blobs", ccstruct_->params())
     , BOOL_MEMBER(textord_show_blobs, false, "Display unsorted blobs", ccstruct_->params())
-    , BOOL_MEMBER(textord_show_word_blobs, true, "Display blobs that comprise words", ccstruct_->params())
+    , BOOL_MEMBER(textord_show_word_blobs, false, "Display blobs that comprise words", ccstruct_->params())
     , BOOL_MEMBER(textord_show_boxes, false, "Display unsorted blobs", ccstruct_->params())
     , INT_MEMBER(textord_max_noise_size, 7, "Pixel size of noise", ccstruct_->params())
     , INT_MEMBER(textord_baseline_debug, 0, "Baseline debug level", ccstruct_->params())
