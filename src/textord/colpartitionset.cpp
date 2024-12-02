@@ -136,6 +136,11 @@ void ColPartitionSet::ImproveColumnCandidate(const WidthCallback &cb,
         int col_box_left = col_part->BoxLeftKey();
         bool tab_width_ok = cb(part->KeyWidth(col_left, part_right));
         bool box_width_ok = cb(part->KeyWidth(col_box_left, part_right));
+
+        const TBOX &part_box(part->bounding_box());
+        const TBOX &col_part_box(col_part->bounding_box());
+        const float x_overlap_fraction = part_box.x_overlap_fraction(col_part_box);
+
         if (tab_width_ok || (!part_width_ok)) {
           // The tab is leaving the good column metric at least as good as
           // it was before, so use the tab.
@@ -147,6 +152,10 @@ void ColPartitionSet::ImproveColumnCandidate(const WidthCallback &cb,
           // it was before, so use the box.
           part->CopyLeftTab(*col_part, true);
           part->SetColumnGoodness(cb);
+        } else if (x_overlap_fraction > 0.75 && col_right <= part_right) {
+          // The column is overlapping the part by more than half, so use it.
+          part->CopyLeftTab(*col_part, false);
+          // part->SetColumnGoodness(cb);
         }
         part_left = part->left_key();
       }
@@ -157,6 +166,11 @@ void ColPartitionSet::ImproveColumnCandidate(const WidthCallback &cb,
         int col_box_right = col_part->BoxRightKey();
         bool tab_width_ok = cb(part->KeyWidth(part_left, col_right));
         bool box_width_ok = cb(part->KeyWidth(part_left, col_box_right));
+
+        const TBOX &part_box(part->bounding_box());
+        const TBOX &col_part_box(col_part->bounding_box());
+        const float x_overlap_fraction = part_box.x_overlap_fraction(col_part_box);
+
         if (tab_width_ok || (!part_width_ok)) {
           // The tab is leaving the good column metric at least as good as
           // it was before, so use the tab.
@@ -168,6 +182,10 @@ void ColPartitionSet::ImproveColumnCandidate(const WidthCallback &cb,
           // it was before, so use the box.
           part->CopyRightTab(*col_part, true);
           part->SetColumnGoodness(cb);
+        } else if (x_overlap_fraction > 0.75 && col_left >= part_left) {
+          // The column is overlapping the part by more than half, so use it.
+          part->CopyRightTab(*col_part, false);
+          // part->SetColumnGoodness(cb);
         }
       }
     }

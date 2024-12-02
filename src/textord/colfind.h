@@ -174,7 +174,7 @@ private:
   // best_columns_.
   void DisplayColumnBounds(PartSetVector *sets);
   
-  void DisplayColumnBounds2(PartSetVector *sets);
+  void DisplayColumnBounds2(PartSetVector *sets, const char *window_name);
 
   void DisplayColumnBounds3(PartSetVector *sets);
 

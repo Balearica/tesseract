@@ -562,8 +562,8 @@ void ColumnFinder::DisplayColumnBounds(PartSetVector *sets) {
 }
 
 // Unlike DisplayColumnBounds, displays the columns in input argument sets.
-void ColumnFinder::DisplayColumnBounds2(PartSetVector *sets) {
-  ScrollView *col_win = MakeWindow(50, 300, "Columns");
+void ColumnFinder::DisplayColumnBounds2(PartSetVector *sets, const char *window_name) {
+  ScrollView *col_win = MakeWindow(50, 300, window_name);
   DisplayBoxes(col_win);
   col_win->Pen(textord_debug_printable ? ScrollView::BLUE : ScrollView::GREEN);
   for (int i = 0; i < sets->size(); ++i) {
@@ -621,7 +621,7 @@ bool ColumnFinder::MakeColumns(bool single_column) {
 #ifndef GRAPHICS_DISABLED
     if (textord_tabfind_show_columns) {
       DisplayColumnBounds3(&part_sets);
-      DisplayColumnBounds2(&column_sets_);
+      DisplayColumnBounds2(&column_sets_, "Initial Columns");
     }
 #endif
 
@@ -630,11 +630,25 @@ bool ColumnFinder::MakeColumns(bool single_column) {
     }
     // Improve the column candidates against themselves.
     ImproveColumnCandidates(&column_sets_, &column_sets_);
+
+#ifndef GRAPHICS_DISABLED
+    if (textord_tabfind_show_columns) {
+      DisplayColumnBounds2(&column_sets_, "Improved Columns (1)");
+    }
+#endif
+
     if (textord_debug_tabfind) {
       PrintColumnCandidates("Improved columns");
     }
     // Improve the column candidates using the part_sets_.
     ImproveColumnCandidates(&part_sets, &column_sets_);
+
+#ifndef GRAPHICS_DISABLED
+    if (textord_tabfind_show_columns) {
+      DisplayColumnBounds2(&column_sets_, "Improved Columns (2)");
+    }
+#endif
+
   }
   ColPartitionSet *single_column_set = part_grid_.MakeSingleColumnSet(WidthCB());
   if (single_column_set != nullptr) {
