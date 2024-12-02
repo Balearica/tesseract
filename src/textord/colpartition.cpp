@@ -1343,8 +1343,9 @@ void ColPartition::SetRegionAndFlowTypesFromProjectionValue(int value) {
       flow_ = BTFT_CHAIN;
     }
 
-    // If this partition is horizontal, mostly medium blobs and 2+ indicators pass, then set it as a chain.
-    if (blob_count > 3 && med_count * 4 >= blob_count * 3 && short_side > kHorzStrongTextlineHeight && short_side * 3 < long_side && value > 0) {
+    // If this partition is horizontal, mostly medium blobs and 2+ indicators pass, upgrade to weak chain.
+    if (flow_ != BTFT_STRONG_CHAIN && flow_ != BTFT_CHAIN && blob_count > 3 && med_count * 4 >= blob_count * 3 
+      && short_side > kHorzStrongTextlineHeight && short_side * 3 < long_side && value > 0) {
       flow_ = BTFT_CHAIN;
     }
 
