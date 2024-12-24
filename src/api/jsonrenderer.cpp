@@ -10,9 +10,8 @@ namespace tesseract {
 
 std::string JsonEscape(const char *text) {
   std::string ret;
-  const unsigned char *ptr = reinterpret_cast<const unsigned char *>(text);
-
-  for (; *ptr; ptr++) {
+  const char *ptr;
+  for (ptr = text; *ptr; ptr++) {
     switch (*ptr) {
       case '"':
         ret += "\\\"";
@@ -36,14 +35,7 @@ std::string JsonEscape(const char *text) {
         ret += "\\t";
         break;
       default:
-        if (*ptr < 0x20 || *ptr > 0x7F) {
-          char buf[8];
-          snprintf(buf, sizeof(buf), "\\u%04x", *ptr);
-          ret += buf;
-        } else {
-          ret += static_cast<char>(*ptr);
-        }
-        break;
+        ret += *ptr;
     }
   }
   return ret;
@@ -308,7 +300,6 @@ char* TessBaseAPI::GetJSONText(ETEXT_DESC* monitor, int page_number) {
  **********************************************************************/
 TessJsonRenderer::TessJsonRenderer(const char *outputbase)
     : TessResultRenderer(outputbase, "json") {
-  font_info_ = false;
 }
 
 bool TessJsonRenderer::BeginDocumentHandler() {
