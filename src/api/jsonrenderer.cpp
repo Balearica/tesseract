@@ -212,6 +212,7 @@ char* TessBaseAPI::GetJSONText(ETEXT_DESC* monitor, int page_number) {
     do {
       const char *choice = wc.GetUTF8Text();
       if (choice != nullptr) {
+        if (wc_cnt > 0) json_str << ",";
         wc_cnt++;
         json_str << "\n                    {\n";
         json_str << "                      \"text\": \"" << JsonEscape(choice).c_str() << "\",";
