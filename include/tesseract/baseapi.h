@@ -361,8 +361,6 @@ public:
    */
   void WriteImage(const int type);
 
-  /** Function added by Tesseract.js.
-
   /** 
    * Function added by Tesseract.js.
    * Return gradient of page.
