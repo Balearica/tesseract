@@ -105,6 +105,7 @@ char* TessBaseAPI::GetJSONText(ETEXT_DESC* monitor, int page_number) {
   json_str << "{\n  \"page_id\": " << page_number + 1 << ",\n  \"blocks\": [";
 
   bool first_word = true;
+  bool first_block = true;
 
   std::unique_ptr<ResultIterator> res_it(GetIterator());
   while (!res_it->Empty(tesseract::RIL_BLOCK)) {
@@ -116,6 +117,17 @@ char* TessBaseAPI::GetJSONText(ETEXT_DESC* monitor, int page_number) {
 
     if (res_it->IsAtBeginningOf(tesseract::RIL_BLOCK)) {
 
+      // Skip non-text blocks.
+      // In addition to generally not being useful to the user,
+      // non-text blocks can cause major performance issues
+      // for some images where they greatly outnumber the text blocks.
+      if (!PTIsTextType(res_it->BlockType())) {
+        res_it->Next(tesseract::RIL_BLOCK);
+        continue;
+      }
+
+      if (!first_block) json_str << ",";
+      first_block = false;
       json_str << "\n    {\n      \"bbox\": ";
       AddBoxToJson(res_it.get(), tesseract::RIL_BLOCK, json_str);
 
