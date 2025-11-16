@@ -1021,6 +1021,15 @@ else()
 ## Define variable for pre-processor to add emscripten-specific content
 add_definitions(-DWASM_BUILD)
 
+execute_process(COMMAND ${EMSCRIPTEN_ROOT_PATH}/emcc --version
+                OUTPUT_VARIABLE EMCC_VER_RAW)
+string(REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)" EMCC_VER "${EMCC_VER_RAW}")
+if(EMCC_VER)
+  message(STATUS "Emscripten (emcc) version: ${EMCC_VER}")
+else()
+  message(WARNING "Could not parse emcc version. Raw output:\n${EMCC_VER_RAW}")
+endif()
+
 #
 # Check link below for detail explanation:
 # https://kripken.github.io/emscripten-site/docs/tools_reference/emcc.html
@@ -1034,7 +1043,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
 # Run closure compiler, reduce code size, enable closure will lead to variable undeclare issue
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --closure 1")
 # Do not emit a separate memory initialization file
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --memory-init-file 0")
+
+if(DEFINED EMCC_VER AND EMCC_VER VERSION_LESS "3.1.55")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --memory-init-file 0")
+endif()
+
 # LLVM link-time optimization, this flag solves the issue of [Invalid SIMD cast between items of different bit sizes]
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --llvm-lto 1")
 # set(LIB_pthread pthread)
@@ -1076,8 +1089,10 @@ set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s MODULARIZE=1")
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s INVOKE_RUN=0")
 # Remove unneeded variables
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s AGGRESSIVE_VARIABLE_ELIMINATION=1")
-# Allow stackTrace() to emit fully proper demangled c++ names
-set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s DEMANGLE_SUPPORT=1")
+if(DEFINED EMCC_VER AND EMCC_VER VERSION_LESS "4.0.6")
+  # Allow stackTrace() to emit fully proper demangled c++ names
+  set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s DEMANGLE_SUPPORT=1")
+endif()
 # Allow unused symbol
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s ERROR_ON_UNDEFINED_SYMBOLS=0")
 #
