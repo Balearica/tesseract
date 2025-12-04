@@ -66,6 +66,27 @@
 #  endif
 #endif
 
+namespace {
+
+#if defined(__wasm_relaxed_simd__)
+#include <wasm_simd128.h>
+
+bool ProbeWasmSDot() {
+  // Check out-of-bounds behaviour of Relaxed Integer Dot Product with Accumulation with signed input (e.g. vpdpbssd, sdot).
+  const v128_t int8_input = wasm_i8x16_const(0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0);
+  const volatile v128_t xint8_input = wasm_i8x16_const(0, 0, 0, -128, 0, 0, -128, 0, 0, -128, 0, 0, -128, 0, 0, 0);
+  const v128_t xint8_output = wasm_i32x4_relaxed_dot_i8x16_i7x16_add(int8_input, xint8_input, wasm_i8x16_const_splat(0));
+
+  const volatile v128_t overflow_input = wasm_i8x16_const(-128, -128, -128, -128, -128, -128, -1, -1, -1, -1, -128, -128, -1, -1, -1, -1);
+  const v128_t overflow_output = wasm_i32x4_relaxed_dot_i8x16_i7x16_add(wasm_i8x16_const_splat(-128), overflow_input, wasm_i8x16_const_splat(0));
+  return !wasm_v128_any_true(wasm_v128_or(
+    wasm_v128_xor(xint8_output, wasm_i32x4_const_splat(-128)),
+    wasm_v128_xor(overflow_output, wasm_i32x4_const(65536, 33024, 33024, 512))));
+}
+#endif
+
+}
+
 namespace tesseract {
 
 // Computes and returns the dot product of the two n-vectors u and v.
@@ -90,6 +111,8 @@ bool SIMDDetect::neon_available_ = true;
 #elif defined(HAVE_NEON)
 // If true, then Neon has been detected.
 bool SIMDDetect::neon_available_;
+#elif defined(__wasm_relaxed_simd__)
+bool SIMDDetect::wasm_sdot_;
 #else
 // If true, then AVX has been detected.
 bool SIMDDetect::avx_available_;
@@ -140,22 +163,48 @@ static void SetDotProduct(DotProductFunction f, const IntSimdMatrix *m = nullptr
 // __GNUC__ is also defined by compilers that include GNU extensions such as
 // clang.
 SIMDDetect::SIMDDetect() {
-  // The fallback is a generic dot product calculation.
-  SetDotProduct(DotProductSSE, &IntSimdMatrix::intSimdMatrixSSE);
+  const char *dotproduct_method = "null";
 
-  const char *dotproduct_env = getenv("DOTPRODUCT");
-  if (dotproduct_env != nullptr) {
-    // Override automatic settings by value from environment variable.
-    dotproduct = dotproduct_env;
-    Update();
+#if defined(__wasm_relaxed_simd__)
+  wasm_sdot_  = ProbeWasmSDot();
+
+  if (wasm_sdot_) {
+    // Our AVX2 “int” backend is the wasm-relaxed-simd implementation
+    // that internally uses the relaxed dot instruction.
+    SetDotProduct(DotProductAVX, &IntSimdMatrix::intSimdMatrixAVX2);
+    dotproduct_method = "wasm-relaxed-sdot";
+  } else {
+    SetDotProduct(DotProductSSE, &IntSimdMatrix::intSimdMatrixSSE);
+    dotproduct_method = "sse4_1";
   }
+#else  // !__wasm_relaxed_simd__
+  #if defined(__wasm_simd128__)
+    SetDotProduct(DotProductSSE, &IntSimdMatrix::intSimdMatrixSSE);
+    dotproduct_method = "sse4_1";
+  #else
+    dotproduct_method = "fallback";
+  #endif
+#endif
 }
 
 void SIMDDetect::Update() {
 
-  SetDotProduct(DotProductSSE, &IntSimdMatrix::intSimdMatrixSSE);
-
-  dotproduct.set_value("sse");
+#if defined(__wasm_relaxed_simd__)
+  if (wasm_sdot_) {
+    SetDotProduct(DotProductAVX, &IntSimdMatrix::intSimdMatrixAVX2);
+    dotproduct.set_value("wasm-relaxed-sdot");
+  } else {
+    SetDotProduct(DotProductSSE, &IntSimdMatrix::intSimdMatrixSSE);
+    dotproduct.set_value("sse4_1");
+  }
+#else
+  #if defined(__wasm_simd128__)
+    SetDotProduct(DotProductSSE, &IntSimdMatrix::intSimdMatrixSSE);
+    dotproduct.set_value("sse4_1");
+  #else
+    dotproduct.set_value("fallback");
+  #endif
+#endif
 }
 
 } // namespace tesseract
