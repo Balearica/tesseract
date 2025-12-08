@@ -17,15 +17,32 @@
 
 #include "intsimdmatrix.h"
 
-#if !defined(__AVX2__)
+#if !defined(__AVX2__) || !defined(__wasm_relaxed_simd__)
 #  if defined(__i686__) || defined(__x86_64__)
 #    error Implementation only for AVX2 capable architectures
+#  elif defined(__EMSCRIPTEN__) || defined(__wasm__)
+#    error "Implementation requires WebAssembly Relaxed SIMD support (-mrelaxed-simd). "
 #  endif
 #else
 #  include <immintrin.h>
 #  include <algorithm>
 #  include <cstdint>
 #  include <vector>
+
+#if defined(__wasm_relaxed_simd__)
+#include <wasm_simd128.h>
+
+namespace {
+
+inline __m256i __wasm_relaxed_dot_i8x16x2_add_epi32(__m256i acc, __m256i a, __m256i b) {
+  __m256i ret;
+  ret.v0 = (__m128i) wasm_i32x4_relaxed_dot_i8x16_i7x16_add((v128_t )(b.v0), (v128_t )(a.v0), (v128_t )(acc.v0));
+  ret.v1 = (__m128i) wasm_i32x4_relaxed_dot_i8x16_i7x16_add((v128_t )(b.v1), (v128_t )(a.v1), (v128_t )(acc.v1));
+  return ret;
+}
+
+}
+#endif
 
 namespace tesseract {
 
@@ -60,21 +77,14 @@ constexpr int kNumInputGroups = kNumInputsPerRegister / kNumInputsPerGroup;
 static inline void MultiplyGroup(const __m256i &rep_input, const __m256i &ones, const int8_t *&wi,
                                  __m256i &weights, __m256i &reps, __m256i &result) {
   // Load a 4x8 block of weights.
-  weights = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(wi));
+  weights = _mm256_loadu_si256(reinterpret_cast<const __m256i_u *>(wi));
   wi += kNumInputsPerRegister;
-  // Normalize the signs on rep_input, weights, so weights is always +ve.
-  reps = _mm256_sign_epi8(rep_input, weights);
-  weights = _mm256_sign_epi8(weights, weights);
-  // Multiply 32x8-bit reps by 32x8-bit weights to make 16x16-bit results,
-  // with adjacent pairs added.
-  weights = _mm256_maddubs_epi16(weights, reps);
-  // Multiply 16x16-bit result by 16x16-bit ones to make 8x32-bit results,
-  // with  adjacent pairs added. What we really want is a horizontal add of
-  // 16+16=32 bit result, but there is no such instruction, so multiply by
-  // 16-bit ones instead. It is probably faster than all the sign-extending,
-  // permuting and adding that would otherwise be required.
-  weights = _mm256_madd_epi16(weights, ones);
-  result = _mm256_add_epi32(result, weights);
+
+
+  reps = rep_input;
+  weights = weights;
+
+  result = __wasm_relaxed_dot_i8x16x2_add_epi32(result, weights, reps);
 }
 
 // Load 64 bits into the bottom of a 128bit register.
@@ -154,14 +164,11 @@ static void PartialMatrixDotVector64(const int8_t *wi, const float *scales, cons
   __m256i result7 = _mm256_setzero_si256();
   // Iterate over the input (u), one registerful at a time.
   for (int j = 0; j < num_in;) {
-    __m256i inputs = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(u + j));
     // Inputs are processed in groups of kNumInputsPerGroup, replicated
     // kNumInputGroups times.
     for (int ig = 0; ig < kNumInputGroups && j < num_in; ++ig, j += kNumInputsPerGroup) {
       // Replicate the low 32 bits (4 inputs) 8 times.
-      __m256i rep_input = _mm256_broadcastd_epi32(_mm256_castsi256_si128(inputs));
-      // Rotate the inputs in groups of 4, so the next 4 inputs are ready.
-      inputs = _mm256_permutevar8x32_epi32(inputs, shift_id);
+      __m256i rep_input = _mm256_broadcastd_epi32(_mm_loadu_si32(u + j));
       __m256i weights, reps;
       // Mul-add, with horizontal add of the 4 inputs to each of the results.
       MultiplyGroup(rep_input, ones, wi, weights, reps, result0);
@@ -195,14 +202,11 @@ static void PartialMatrixDotVector32(const int8_t *wi, const float *scales, cons
   __m256i result3 = _mm256_setzero_si256();
   // Iterate over the input (u), one registerful at a time.
   for (int j = 0; j < num_in;) {
-    __m256i inputs = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(u + j));
     // Inputs are processed in groups of kNumInputsPerGroup, replicated
     // kNumInputGroups times.
     for (int ig = 0; ig < kNumInputGroups && j < num_in; ++ig, j += kNumInputsPerGroup) {
       // Replicate the low 32 bits (4 inputs) 8 times.
-      __m256i rep_input = _mm256_broadcastd_epi32(_mm256_castsi256_si128(inputs));
-      // Rotate the inputs in groups of 4, so the next 4 inputs are ready.
-      inputs = _mm256_permutevar8x32_epi32(inputs, shift_id);
+      __m256i rep_input = _mm256_broadcastd_epi32(_mm_loadu_si32(u + j));
       __m256i weights, reps;
       // Mul-add, with horizontal add of the 4 inputs to each of the results.
       MultiplyGroup(rep_input, ones, wi, weights, reps, result0);
@@ -228,14 +232,11 @@ static void PartialMatrixDotVector16(const int8_t *wi, const float *scales, cons
   __m256i result1 = _mm256_setzero_si256();
   // Iterate over the input (u), one registerful at a time.
   for (int j = 0; j < num_in;) {
-    __m256i inputs = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(u + j));
     // Inputs are processed in groups of kNumInputsPerGroup, replicated
     // kNumInputGroups times.
     for (int ig = 0; ig < kNumInputGroups && j < num_in; ++ig, j += kNumInputsPerGroup) {
       // Replicate the low 32 bits (4 inputs) 8 times.
-      __m256i rep_input = _mm256_broadcastd_epi32(_mm256_castsi256_si128(inputs));
-      // Rotate the inputs in groups of 4, so the next 4 inputs are ready.
-      inputs = _mm256_permutevar8x32_epi32(inputs, shift_id);
+      __m256i rep_input = _mm256_broadcastd_epi32(_mm_loadu_si32(u + j));
       __m256i weights, reps;
       // Mul-add, with horizontal add of the 4 inputs to each of the results.
       MultiplyGroup(rep_input, ones, wi, weights, reps, result0);
@@ -257,14 +258,11 @@ static inline void PartialMatrixDotVector8(const int8_t *wi, const float *scales
   __m256i result0 = _mm256_setzero_si256();
   // Iterate over the input (u), one registerful at a time.
   for (int j = 0; j < num_in;) {
-    __m256i inputs = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(u + j));
     // Inputs are processed in groups of kNumInputsPerGroup, replicated
     // kNumInputGroups times.
     for (int ig = 0; ig < kNumInputGroups && j < num_in; ++ig, j += kNumInputsPerGroup) {
       // Replicate the low 32 bits (4 inputs) 8 times.
-      __m256i rep_input = _mm256_broadcastd_epi32(_mm256_castsi256_si128(inputs));
-      // Rotate the inputs in groups of 4, so the next 4 inputs are ready.
-      inputs = _mm256_permutevar8x32_epi32(inputs, shift_id);
+      __m256i rep_input = _mm256_broadcastd_epi32(_mm_loadu_si32(u + j));
       __m256i weights, reps;
       // Mul-add, with horizontal add of the 4 inputs to each of the results.
       MultiplyGroup(rep_input, ones, wi, weights, reps, result0);
@@ -399,14 +397,11 @@ static void PartialMatrixDotVector64(const int8_t *wi, const double *scales, con
   __m256i result7 = _mm256_setzero_si256();
   // Iterate over the input (u), one registerful at a time.
   for (int j = 0; j < num_in;) {
-    __m256i inputs = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(u + j));
     // Inputs are processed in groups of kNumInputsPerGroup, replicated
     // kNumInputGroups times.
     for (int ig = 0; ig < kNumInputGroups && j < num_in; ++ig, j += kNumInputsPerGroup) {
       // Replicate the low 32 bits (4 inputs) 8 times.
-      __m256i rep_input = _mm256_broadcastd_epi32(_mm256_castsi256_si128(inputs));
-      // Rotate the inputs in groups of 4, so the next 4 inputs are ready.
-      inputs = _mm256_permutevar8x32_epi32(inputs, shift_id);
+      __m256i rep_input = _mm256_broadcastd_epi32(_mm_loadu_si32(u + j));
       __m256i weights, reps;
       // Mul-add, with horizontal add of the 4 inputs to each of the results.
       MultiplyGroup(rep_input, ones, wi, weights, reps, result0);
@@ -440,14 +435,11 @@ static void PartialMatrixDotVector32(const int8_t *wi, const double *scales, con
   __m256i result3 = _mm256_setzero_si256();
   // Iterate over the input (u), one registerful at a time.
   for (int j = 0; j < num_in;) {
-    __m256i inputs = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(u + j));
     // Inputs are processed in groups of kNumInputsPerGroup, replicated
     // kNumInputGroups times.
     for (int ig = 0; ig < kNumInputGroups && j < num_in; ++ig, j += kNumInputsPerGroup) {
       // Replicate the low 32 bits (4 inputs) 8 times.
-      __m256i rep_input = _mm256_broadcastd_epi32(_mm256_castsi256_si128(inputs));
-      // Rotate the inputs in groups of 4, so the next 4 inputs are ready.
-      inputs = _mm256_permutevar8x32_epi32(inputs, shift_id);
+      __m256i rep_input = _mm256_broadcastd_epi32(_mm_loadu_si32(u + j));
       __m256i weights, reps;
       // Mul-add, with horizontal add of the 4 inputs to each of the results.
       MultiplyGroup(rep_input, ones, wi, weights, reps, result0);
@@ -502,14 +494,11 @@ static inline void PartialMatrixDotVector8(const int8_t *wi, const double *scale
   __m256i result0 = _mm256_setzero_si256();
   // Iterate over the input (u), one registerful at a time.
   for (int j = 0; j < num_in;) {
-    __m256i inputs = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(u + j));
     // Inputs are processed in groups of kNumInputsPerGroup, replicated
     // kNumInputGroups times.
     for (int ig = 0; ig < kNumInputGroups && j < num_in; ++ig, j += kNumInputsPerGroup) {
       // Replicate the low 32 bits (4 inputs) 8 times.
-      __m256i rep_input = _mm256_broadcastd_epi32(_mm256_castsi256_si128(inputs));
-      // Rotate the inputs in groups of 4, so the next 4 inputs are ready.
-      inputs = _mm256_permutevar8x32_epi32(inputs, shift_id);
+      __m256i rep_input = _mm256_broadcastd_epi32(_mm_loadu_si32(u + j));
       __m256i weights, reps;
       // Mul-add, with horizontal add of the 4 inputs to each of the results.
       MultiplyGroup(rep_input, ones, wi, weights, reps, result0);

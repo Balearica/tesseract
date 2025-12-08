@@ -60,6 +60,10 @@ public:
     return detector.neon_available_;
   }
 
+#if defined(__wasm_relaxed_simd__)
+  static bool HasSDot() { return detector.wasm_sdot_; };
+#endif
+
   // Update settings after config variable was set.
   static TESS_API void Update();
 
@@ -81,6 +85,10 @@ private:
   static TESS_API bool sse_available_;
   // If true, then NEON has been detected.
   static TESS_API bool neon_available_;
+
+#if defined(__wasm_relaxed_simd__)
+  static TESS_API bool wasm_sdot_;
+#endif
 };
 
 } // namespace tesseract
