@@ -708,13 +708,64 @@ if(DISABLED_LEGACY_ENGINE)
 endif(DISABLED_LEGACY_ENGINE)
 
 if (WASM_BUILD)
-if(NOT HAVE_SSE4_1)
-  list(APPEND arch_files src/arch/dotproduct.cpp src/arch/simddetect.cpp
-      src/arch/intsimdmatrix.cpp)
-else()
-    list(APPEND arch_files_opt src/arch_sse/dotproductsse.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixsse.cpp src/arch_sse/dotproduct.cpp)
-    set_source_files_properties(src/arch_sse/dotproductsse.cpp src/arch_sse/simddetect.cpp src/arch_sse/intsimdmatrix.cpp src/arch_sse/intsimdmatrixsse.cpp  src/arch_sse/dotproduct.cpp PROPERTIES COMPILE_FLAGS "-DSSE4_1 -msimd128 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2 -Wno-argument-outside-range")
-endif(NOT HAVE_SSE4_1)
+
+  set(SSE_SIMD_COMMON_FILES
+      src/arch_sse/simddetect.cpp
+      src/arch_sse/intsimdmatrix.cpp
+      src/arch_sse/intsimdmatrixsse.cpp
+      src/arch_sse/dotproduct.cpp
+  )
+
+  set(SIMD_FLAGS_AVX2
+      "-DSSE4_1 -D__AVX2__ -D__AVX__ \
+      -msimd128 -mrelaxed-simd \
+      -mavx -mavx2 \
+      -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2 \
+      -Wno-argument-outside-range"
+  )
+
+  set(SIMD_FLAGS_SSE41
+      "-DSSE4_1 \
+      -msimd128 \
+      -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2 \
+      -Wno-argument-outside-range"
+  )
+
+  if(HAVE_AVX2)
+      list(APPEND arch_files_opt
+          ${SSE_SIMD_COMMON_FILES}
+          src/arch_sse/dotproductavx.cpp
+          src/arch_sse/intsimdmatrixavx2.cpp
+      )
+
+      set_source_files_properties(
+          ${SSE_SIMD_COMMON_FILES}
+          src/arch_sse/dotproductavx.cpp
+          src/arch_sse/intsimdmatrixavx2.cpp
+          PROPERTIES
+              COMPILE_FLAGS "${SIMD_FLAGS_AVX2}"
+      )
+
+  elseif(HAVE_SSE4_1)
+      list(APPEND arch_files_opt
+          ${SSE_SIMD_COMMON_FILES}
+          src/arch_sse/dotproductsse.cpp
+      )
+
+      set_source_files_properties(
+          ${SSE_SIMD_COMMON_FILES}
+          src/arch_sse/dotproductsse.cpp
+          PROPERTIES
+              COMPILE_FLAGS "${SIMD_FLAGS_SSE41}"
+      )
+
+  else()
+      list(APPEND arch_files
+          src/arch/dotproduct.cpp
+          src/arch/simddetect.cpp
+          src/arch/intsimdmatrix.cpp
+      )
+  endif()
 
 else()
 
@@ -1021,6 +1072,15 @@ else()
 ## Define variable for pre-processor to add emscripten-specific content
 add_definitions(-DWASM_BUILD)
 
+execute_process(COMMAND ${EMSCRIPTEN_ROOT_PATH}/emcc --version
+                OUTPUT_VARIABLE EMCC_VER_RAW)
+string(REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)" EMCC_VER "${EMCC_VER_RAW}")
+if(EMCC_VER)
+  message(STATUS "Emscripten (emcc) version: ${EMCC_VER}")
+else()
+  message(WARNING "Could not parse emcc version. Raw output:\n${EMCC_VER_RAW}")
+endif()
+
 #
 # Check link below for detail explanation:
 # https://kripken.github.io/emscripten-site/docs/tools_reference/emcc.html
@@ -1034,7 +1094,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
 # Run closure compiler, reduce code size, enable closure will lead to variable undeclare issue
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --closure 1")
 # Do not emit a separate memory initialization file
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --memory-init-file 0")
+
+if(DEFINED EMCC_VER AND EMCC_VER VERSION_LESS "3.1.55")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --memory-init-file 0")
+endif()
+
 # LLVM link-time optimization, this flag solves the issue of [Invalid SIMD cast between items of different bit sizes]
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --llvm-lto 1")
 # set(LIB_pthread pthread)
@@ -1043,7 +1107,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --memory-init-file 0")
 ########################################
 # Build tesseract-core.js (WASM version)
 ########################################
-if(HAVE_SSE4_1)
+if(HAVE_AVX2)
+  if(DISABLED_LEGACY_ENGINE)
+    set(WASM_NAME tesseract-core-relaxedsimd-lstm)
+  else()
+    set(WASM_NAME tesseract-core-relaxedsimd)
+  endif()
+elseif(HAVE_SSE4_1)
   if(DISABLED_LEGACY_ENGINE)
     set(WASM_NAME tesseract-core-simd-lstm)
   else()
@@ -1076,8 +1146,11 @@ set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s MODULARIZE=1")
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s INVOKE_RUN=0")
 # Remove unneeded variables
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s AGGRESSIVE_VARIABLE_ELIMINATION=1")
-# Allow stackTrace() to emit fully proper demangled c++ names
-set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s DEMANGLE_SUPPORT=1")
+if(DEFINED EMCC_VER AND EMCC_VER VERSION_LESS "4.0.6")
+  # Allow stackTrace() to emit fully proper demangled c++ names
+  set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s DEMANGLE_SUPPORT=1")
+endif()
+
 # Allow unused symbol
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s ERROR_ON_UNDEFINED_SYMBOLS=0")
 #
