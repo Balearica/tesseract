@@ -1142,6 +1142,8 @@ set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s ALLOW_MEMORY_GROWTH=1")
 # set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_NAME='\"TesseractCore\"'")
 # Enable for closure option
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s MODULARIZE=1")
+# Export as ES6 module for browser ESM workers
+set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s EXPORT_ES6=1")
 # Do not run main function
 set(TESS_LINK_FLAGS "${TESS_LINK_FLAGS} -s INVOKE_RUN=0")
 # Remove unneeded variables
