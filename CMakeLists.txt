@@ -732,15 +732,20 @@ if (WASM_BUILD)
   )
 
   if(HAVE_AVX2)
+      # dotproductsse.cpp is needed here too: simddetect.cpp falls back to
+      # DotProductSSE when the relaxed-sdot probe fails, and without it the
+      # float LSTM path (e.g. tessdata_best) aborts with a missing function.
       list(APPEND arch_files_opt
           ${SSE_SIMD_COMMON_FILES}
           src/arch_sse/dotproductavx.cpp
+          src/arch_sse/dotproductsse.cpp
           src/arch_sse/intsimdmatrixavx2.cpp
       )
 
       set_source_files_properties(
           ${SSE_SIMD_COMMON_FILES}
           src/arch_sse/dotproductavx.cpp
+          src/arch_sse/dotproductsse.cpp
           src/arch_sse/intsimdmatrixavx2.cpp
           PROPERTIES
               COMPILE_FLAGS "${SIMD_FLAGS_AVX2}"
